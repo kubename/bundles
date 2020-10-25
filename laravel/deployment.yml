@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: testing
+  name: laravel-example-app
+  labels:
+    app: laravel
+    version: {{ .version }}
+spec:
+  selector:
+    matchLabels:
+      app: laravel
+  template:
+    spec:
+      hostAliases:
+        - ip: "127.0.0.1"
+          hostnames:
+            - caddy
+            - php-fpm
+      volumes:
+        - name: code-repository
+          emptyDir: {}
+      initContainers:
+        # Setup should be extracted to its own job and push it to s3 or build an image which will be push to
+        # cluster registry. For the sake of simplicity we are doing it here.
+        - name: repository-setup
+          image: kubename/laravel-php73:latest
+          envFrom:
+            - configMapRef:
+                name: laravel-example-config
+            - secretRef:
+                name: laravel-example-secret
+          volumeMounts:
+            - mountPath: /code
+              name: code-repository
+          command: ["/bin/bash"]
+          args:
+            - "-c"
+            - |
+              git clone https://github.com/laravel/laravel.git /code/laravel
+              cd /code/laravel
+              composer install --no-dev
+              php-fpm7.3
+      containers:
+        - name: caddy
+          image: kubename/caddy:latest
+          volumeMounts:
+            - mountPath: /code
+              name: code-repository
+          envFrom:
+              - configMapRef:
+                  name: laravel-example-config
+              - secretRef:
+                  name: laravel-example-secret
+          ports:
+            - containerPort: 80
+          command: ["/bin/sh"]
+          args:
+            - "-c"
+            - |
+              cat <<EOF >/etc/caddy/laravel-example-app.conf
+              *:80 {
+                  root * /code/laravel/public
+                  encode gzip
+                  php_fastcgi php-fpm:9000
+                  file_server
+              }"
+              EOF
+              import /etc/caddy/laravel-example-app.conf > /etc/Caddyfile
+              caddy --conf /etc/Caddyfile --log stdout --agree=true
+        - name: php-fpm
+          image: kubename/caddy:latest
+          imagePullPolicy: Always
+          volumeMounts:
+              - mountPath: /code
+                name: code-repository
+          envFrom:
+            - configMapRef:
+                name: laravel-example-config
+            - secretRef:
+                name: laravel-example-secret
+          ports:
+              - containerPort: 9000
+
+
+
