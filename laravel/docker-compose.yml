@@ -4,13 +4,13 @@ services:
   php-fpm:
     build: docker/php-fpm
     volumes:
-      - ./stubs:/code
+      - ./stubs:/code/public
     depends_on:
       - caddy
 
   caddy:
     build: docker/caddy
     volumes:
-    - ./stubs:/code
+    - ./stubs:/code/public
     ports:
       - 8080:80

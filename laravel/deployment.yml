@@ -43,11 +43,11 @@ spec:
               git clone https://github.com/laravel/laravel.git /code
               cd /code
               composer global require hirak/prestissimo
-              COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev
+              composer install --no-dev
               chown -R www-data:www-data /code
       containers:
         - name: caddy
-          image: caddy:alpine
+          image: abiosoft/caddy:no-stats
           volumeMounts:
             - mountPath: /code
               name: code-repository
@@ -64,13 +64,17 @@ spec:
             - |
               cat <<EOF >/etc/Caddyfile
               *:80 {
-                root * /code/public
-                php_fastcgi php-fpm:9000
-                rewrite * /index.php?{query}
-                encode gzip
+                  root /code/public
+                  fastcgi / php-fpm:9000 php {
+                      index index.php
+                  }
+                  rewrite {
+                      to {path} {path}/ /index.php?{query}
+                  }
+                  gzip
               }
               EOF
-              caddy run -config /etc/Caddyfile
+              caddy --conf /etc/Caddyfile --log stdout --agree=true
         - name: php-fpm
           image: kubename/laravel-php73:latest
           volumeMounts:
