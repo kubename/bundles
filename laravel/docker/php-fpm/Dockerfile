@@ -1,6 +1,6 @@
 FROM phpdockerio/php73-fpm:latest
 
-MAINTAINER "Mohammed Mudassir<hello@mudasir.me>"
+MAINTAINER "Mohammed Mudassir <md@kubename.com>"
 
 # Fix debconf warnings upon build
 ARG DEBIAN_FRONTEND="noninteractive"
