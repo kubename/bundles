@@ -1,8 +1,15 @@
 version: "3.4"
 
 services:
-  php-fpm:
-    build: docker/php-fpm
+  php-fpm73:
+    build: docker/php-fpm73
+    volumes:
+      - ./stubs:/code/public
+    depends_on:
+      - caddy
+
+  php-fpm80:
+    build: docker/php-fpm80
     volumes:
       - ./stubs:/code/public
     depends_on:
