@@ -8,6 +8,13 @@ services:
     depends_on:
       - caddy
 
+  php-fpm74:
+    build: docker/php-fpm74
+    volumes:
+      - ./stubs:/code/public
+    depends_on:
+      - caddy
+
   php-fpm80:
     build: docker/php-fpm80
     volumes:
